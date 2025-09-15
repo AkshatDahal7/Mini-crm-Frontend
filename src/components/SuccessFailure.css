@@ -1,0 +1,31 @@
+.campaign-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.campaign-card {
+  border: 1px solid #e5e7eb;
+  padding: 1rem;
+  border-radius: 8px;
+  background: #fafafa;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+.campaign-card h3 {
+  margin: 0 0 0.5rem 0;
+  color: #1f2937;
+}
+
+.campaign-description {
+  margin: 0 0 1rem 0;
+  font-size: 0.95rem;
+  color: #374151;
+}
+
+.campaign-stats {
+  display: flex;
+  gap: 1.5rem;
+  font-size: 0.9rem;
+  color: #4b5563;
+}
