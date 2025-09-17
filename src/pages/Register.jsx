@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import "../styles.css";
+const API_BASE = "https://mini-crm-eg7w.onrender.com/api";
 
 function Register() {
   const navigate = useNavigate(); 
@@ -23,7 +24,7 @@ function Register() {
     setError("");
 
     try {
-      const response = await fetch("http://localhost:4000/api/auth/register", {
+      const response = await fetch(`${API_BASE}/auth/register`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
