@@ -27,27 +27,25 @@ const Dashboard = () => {
   const [error, setError] = useState(null);
   const [user, setUser] = useState(null);
 
-  // Decode JWT token to get user info
+  // Decode JWT token
   useEffect(() => {
     const token = localStorage.getItem("token");
     if (token) {
       try {
         const payload = JSON.parse(atob(token.split(".")[1]));
         setUser({ name: payload.name, email: payload.email });
-      } catch (err) {
+      } catch {
         setUser(null);
       }
     }
   }, []);
 
+  // Load all data
   useEffect(() => {
     const loadData = async () => {
       try {
         setLoading(true);
         setError(null);
-
-        console.log("Loading dashboard data...");
-
         const [customersData, ordersData, segmentsData, campaignsData] =
           await Promise.all([
             fetchCustomers(),
@@ -55,21 +53,12 @@ const Dashboard = () => {
             fetchSegments(),
             fetchCampaigns(),
           ]);
-
-        console.log("Loaded data:", {
-          customers: customersData,
-          orders: ordersData,
-          segments: segmentsData,
-          campaigns: campaignsData,
-        });
-
         setCustomers(customersData || []);
         setOrders(ordersData || []);
         setSegments(segmentsData || []);
         setCampaigns(campaignsData || []);
-      } catch (error) {
-        console.error("Error loading data:", error);
-        setError(error.message);
+      } catch (err) {
+        setError(err.message);
       } finally {
         setLoading(false);
       }
@@ -77,71 +66,69 @@ const Dashboard = () => {
     loadData();
   }, []);
 
+  // Handlers
   const handleCreateCustomer = async (customerData) => {
     try {
-      console.log("Creating customer:", customerData);
       const newCustomer = await createCustomer(customerData);
-      console.log("Created customer:", newCustomer);
-      setCustomers((prevCustomers) => [newCustomer, ...prevCustomers]);
+      setCustomers((prev) => [newCustomer, ...prev]);
       return newCustomer;
     } catch (error) {
-      console.error("Error creating customer:", error);
+      console.error(error);
       throw error;
     }
   };
 
   const handleCreateOrder = async (orderData) => {
     try {
-      console.log("Creating order:", orderData);
       const newOrder = await createOrder(orderData);
-      console.log("Created order:", newOrder);
-      setOrders((prevOrders) => [newOrder, ...prevOrders]);
+      setOrders((prev) => [newOrder, ...prev]);
       return newOrder;
     } catch (error) {
-      console.error("Error creating order:", error);
+      console.error(error);
       throw error;
     }
   };
 
-  // Debug logging for customers state changes
-  useEffect(() => {
-    console.log("Customers state updated:", customers);
-    console.log("Customers length:", customers.length);
-    console.log("Customers array:", Array.isArray(customers));
-  }, [customers]);
-
-  // Handle creating AI campaign (frontend-only demo)
-  const handleCreateCampaign = async (e) => {
-    e.preventDefault();
-    const name = e.target.campaignName.value;
-
+  const handleCreateSegment = async (segmentData) => {
     try {
-      // Free AI-like API (random joke for demo)
-      const response = await fetch("https://api.chucknorris.io/jokes/random");
-      const data = await response.json();
+      const newSegment = await createSegment(segmentData);
+      setSegments((prev) => [...prev, newSegment]);
+      alert(`✅ Segment "${newSegment.name}" created!`);
+    } catch (err) {
+      console.error("Failed to create segment:", err);
+      alert("❌ Failed to create segment. Check console.");
+    }
+  };
+
+  const handleCreateAICampaign = async () => {
+    try {
+      const ideas = [
+        "Boost your productivity with our new features!",
+        "Exclusive offer just for you — limited time only!",
+        "Upgrade today and enjoy premium benefits instantly!",
+        "Discover smarter ways to manage your business.",
+        "Get ahead of competitors with our latest tools!"
+      ];
+      const randomIdea = ideas[Math.floor(Math.random() * ideas.length)];
+
+      const totalCustomers = Array.isArray(customers) ? customers.length : 0;
+      const sent = Math.floor(totalCustomers * (0.9 + Math.random() * 0.03));
+      const failed = totalCustomers - sent;
 
       const newCampaign = {
-        name,
-        message: data.value,
-        createdAt: new Date().toISOString(),
+        id: Date.now(),
+        title: "AI Generated Campaign",
+        description: randomIdea,
+        status: "Draft",
+        sent,
+        failed
       };
 
-      setCampaigns((prev) => [...prev, newCampaign]);
-
-      e.target.reset();
-
-      // Show toast
-      const toast = document.createElement("div");
-      toast.innerText = `✅ Campaign "${name}" created with AI message!`;
-      toast.style.background = "#4f46e5";
-      toast.style.color = "white";
-      toast.style.padding = "10px";
-      toast.style.marginTop = "10px";
-      toast.style.borderRadius = "5px";
-      document.getElementById("toast-container").appendChild(toast);
-      setTimeout(() => toast.remove(), 3000);
+      setCampaigns((prev) => [newCampaign, ...prev]);
+      alert("✅ AI Campaign generated!");
     } catch (err) {
-      console.error("Error creating campaign:", err);
+      console.error("Error generating campaign:", err);
+      alert("❌ Failed to generate campaign");
     }
   };
 
@@ -150,13 +137,7 @@ const Dashboard = () => {
       <div className="dashboard">
         <Navbar />
         <div className="dashboard-content">
-          {user && (
-            <div
-              style={{ marginBottom: "10px", color: "#333", fontWeight: "bold" }}
-            >
-              Logged in as: {user.name} ({user.email})
-            </div>
-          )}
+          {user && <div>Logged in as: {user.name} ({user.email})</div>}
           <div className="loading-text">
             <div className="spinner"></div>
             Loading dashboard data...
@@ -171,13 +152,7 @@ const Dashboard = () => {
       <div className="dashboard">
         <Navbar />
         <div className="dashboard-content">
-          {user && (
-            <div
-              style={{ marginBottom: "10px", color: "#333", fontWeight: "bold" }}
-            >
-              Logged in as: {user.name} ({user.email})
-            </div>
-          )}
+          {user && <div>Logged in as: {user.name} ({user.email})</div>}
           <div className="alert error">
             <strong>Error loading dashboard:</strong> {error}
             <button onClick={() => window.location.reload()}>Retry</button>
@@ -191,204 +166,98 @@ const Dashboard = () => {
     <div className="dashboard">
       <Navbar />
       <div className="dashboard-content">
-        {user && (
-          <div
-            style={{ marginBottom: "10px", color: "#333", fontWeight: "bold" }}
-          >
-            Logged in as: {user.name} ({user.email})
-          </div>
-        )}
+        {user && <div>Logged in as: {user.name} ({user.email})</div>}
         <h1>Marketing Campaign Dashboard</h1>
 
-        {/* First Row - Customers and Orders Widgets */}
+        {/* First Row - Customers & Orders */}
         <div className="dashboard-grid">
-          {/* Customers Widget */}
           <div className="dashboard-section">
             <h2>👥 Customers ({customers.length})</h2>
-            <div className="create-form">
-              <div className="form-container">
-                <CreateCustomer onCreate={handleCreateCustomer} />
-              </div>
-            </div>
+            <CreateCustomer onCreate={handleCreateCustomer} />
             <DashboardCustomer customers={customers} />
           </div>
 
-          {/* Orders Widget */}
           <div className="dashboard-section">
             <h2>🛍️ Orders ({orders.length})</h2>
-            <div className="create-form">
-              <div className="form-container">
-                {Array.isArray(customers) && customers.length > 0 ? (
-                  <CreateOrder customers={customers} onCreate={handleCreateOrder} />
-                ) : (
-                  <div className="alert warning">
-                    <strong>No customers available!</strong> Please add customers
-                    first before creating orders.
-                    <br />
-                    <small>
-                      Current customers: {customers.length} (Type:{" "}
-                      {typeof customers})
-                    </small>
-                  </div>
-                )}
-              </div>
-            </div>
+            {customers.length > 0 ? (
+              <CreateOrder customers={customers} onCreate={handleCreateOrder} />
+            ) : (
+              <div className="alert warning">Add customers first!</div>
+            )}
             <DashboardOrder orders={orders} />
           </div>
         </div>
 
-        {/* Second Row - Segments and Analytics */}
+        {/* Second Row - Segments & Campaigns */}
         <div className="dashboard-grid">
-          {/* Segments Section */}
+          {/* Segments */}
           <div className="dashboard-section">
             <h2>🎯 Audience Segments ({segments.length})</h2>
-            <div className="list-container">
-              {Array.isArray(segments) && segments.length > 0 ? (
-                <SegmentList segments={segments} />
-              ) : (
-                <div className="empty-state">
-                  <h3>No segments created</h3>
-                  <p>
-                    Build your first audience segment to start targeting customers
-                  </p>
-                </div>
-              )}
+
+            {/* Segment Form */}
+            <div className="create-segment-form">
+              <input type="text" id="segmentName" placeholder="Segment Name" />
+              <input type="text" id="segmentDesc" placeholder="Description" />
+              <input type="number" id="minSpend" placeholder="Min Spend" />
+              <input type="number" id="maxSpend" placeholder="Max Spend" />
+              <input type="number" id="minVisits" placeholder="Min Visits" />
+              <input type="number" id="lastActive" placeholder="Last Active (days)" />
+              <button
+                onClick={() => {
+                  const name = document.getElementById("segmentName").value;
+                  const description = document.getElementById("segmentDesc").value;
+                  const minSpend = parseFloat(document.getElementById("minSpend").value) || 0;
+                  const maxSpend = parseFloat(document.getElementById("maxSpend").value) || 0;
+                  const minVisits = parseInt(document.getElementById("minVisits").value) || 0;
+                  const lastActive = parseInt(document.getElementById("lastActive").value) || 0;
+                  if (!name) return alert("Segment name required!");
+                  handleCreateSegment({ name, description, minSpend, maxSpend, minVisits, lastActive });
+                }}
+              >
+                Create Segment
+              </button>
             </div>
+
+            <SegmentList segments={segments} />
           </div>
 
-                    {/* Campaign Analytics */}
+          {/* Campaign Analytics */}
           <div className="dashboard-section success-failure-section">
             <h2>📊 Campaign Analytics</h2>
-            <div className="component-container">
-              {Array.isArray(campaigns) && campaigns.length > 0 ? (
-                <SuccessFailure campaigns={campaigns} />
-              ) : (
-                <div className="empty-state">
-                  <h3>No campaign data</h3>
-                  <p>
-                    Campaign statistics will appear here once you start running
-                    campaigns
-                  </p>
-                  <small>Campaigns: {campaigns.length} (Type: {typeof campaigns})</small>
-                </div>
-              )}
-            </div>
+            {campaigns.length > 0 ? (
+              <SuccessFailure campaigns={campaigns} />
+            ) : (
+              <div className="empty-state">
+                <h3>No campaign data</h3>
+                <p>Campaign statistics will appear here once you start running campaigns</p>
+                <small>Campaigns: {campaigns.length} (Type: {typeof campaigns})</small>
+              </div>
+            )}
 
             {/* AI Campaign Generator */}
             <div style={{ marginTop: "1.5rem" }}>
-              <button
-                className="btn-primary"
-                onClick={async () => {
-                  try {
-                    // Simulate AI text generation (could plug OpenAI or HuggingFace later)
-                    const ideas = [
-                      "Boost your productivity with our new features!",
-                      "Exclusive offer just for you — limited time only!",
-                      "Upgrade today and enjoy premium benefits instantly!",
-                      "Discover smarter ways to manage your business.",
-                      "Get ahead of competitors with our latest tools!"
-                    ];
-                    const randomIdea = ideas[Math.floor(Math.random() * ideas.length)];
-
-                    const totalCustomers = Array.isArray(customers) ? customers.length : 0;
-                    const sent = Math.floor(totalCustomers * (0.9 + Math.random() * 0.03)); // 90–93%
-                    const failed = totalCustomers - sent;
-
-                    const newCampaign = {
-                      id: Date.now(),
-                      title: "AI Generated Campaign",
-                      description: randomIdea,
-                      status: "Draft",
-                      sent,
-                      failed
-                    };
-
-                    setCampaigns((prev) => [newCampaign, ...prev]);
-
-                    alert("✅ AI Campaign generated!");
-                  } catch (err) {
-                    console.error("Error generating campaign:", err);
-                    alert("❌ Failed to generate campaign");
-                  }
-                }}
-    >
-      🚀 Generate AI Campaign
-    </button>
-  </div>
-
-  {/* Quick Stats */}
-  <div className="form-container" style={{ marginTop: "1.5rem" }}>
-    <div className="form-section-title">Quick Stats</div>
-    <div className="form-grid-2">
-      <div className="component-container">
-        <h4>Total Customers</h4>
-        <div
-          style={{
-            fontSize: "2rem",
-            fontWeight: "bold",
-            color: "#4f46e5",
-          }}
-        >
-          {Array.isArray(customers) ? customers.length : 0}
+              <button className="btn-primary" onClick={handleCreateAICampaign}>
+                🚀 Generate AI Campaign
+              </button>
+            </div>
+          </div>
         </div>
-      </div>
-      <div className="component-container">
-        <h4>Total Orders</h4>
-        <div
-          style={{
-            fontSize: "2rem",
-            fontWeight: "bold",
-            color: "#059669",
-          }}
-        >
-          {Array.isArray(orders) ? orders.length : 0}
-        </div>
-      </div>
-    </div>
-    <div className="form-grid-2">
-      <div className="component-container">
-        <h4>Active Segments</h4>
-        <div
-          style={{
-            fontSize: "2rem",
-            fontWeight: "bold",
-            color: "#dc2626",
-          }}
-        >
-          {Array.isArray(segments) ? segments.length : 0}
-        </div>
-      </div>
-      <div className="component-container">
-        <h4>Total Revenue</h4>
-        <div
-          style={{
-            fontSize: "2rem",
-            fontWeight: "bold",
-            color: "#7c2d12",
-          }}
-        >
-          ₹
-          {Array.isArray(orders) 
-            ? orders.reduce((sum, order) => sum + (order.totalAmount || 0), 0).toLocaleString()
-            : 0
-          }
-        </div>
-      </div>
-    </div>
-  </div>
-</div>
+
+        {/* Quick Stats */}
+        <div className="form-container" style={{ marginTop: "1.5rem" }}>
+          <div className="form-grid-2">
+            <div>Total Customers: {customers.length}</div>
+            <div>Total Orders: {orders.length}</div>
+            <div>Active Segments: {segments.length}</div>
+            <div>
+              Total Revenue: ₹
+              {orders.reduce((sum, o) => sum + (o.totalAmount || 0), 0).toLocaleString()}
+            </div>
+          </div>
         </div>
 
         {/* Toasts */}
-        <div
-          id="toast-container"
-          style={{
-            position: "fixed",
-            top: "20px",
-            right: "20px",
-            zIndex: 1000,
-          }}
-        ></div>
+        <div id="toast-container" style={{ position: "fixed", top: "20px", right: "20px", zIndex: 1000 }}></div>
       </div>
     </div>
   );

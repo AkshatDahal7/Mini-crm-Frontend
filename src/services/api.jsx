@@ -180,45 +180,38 @@ export const createOrder = async (orderData) => {
 // Segments
 export const fetchSegments = async () => {
   try {
-    const data = await apiRequest("/segments");
-    
-    // Handle different response formats
-    if (Array.isArray(data)) {
-      console.log("Segments data is array:", data);
-      return data;
-    } else if (data && Array.isArray(data.segments)) {
-      console.log("Segments data wrapped in object:", data.segments);
-      return data.segments;
-    } else if (data && Array.isArray(data.data)) {
-      console.log("Segments data in data property:", data.data);
-      return data.data;
-    } else {
-      console.warn("Unexpected segments response format:", data);
-      return [];
-    }
+    const data = await apiRequest("/segments", {
+      method: "GET",
+    });
+
+    // Standardize response to always return an array
+    if (Array.isArray(data)) return data;
+    if (data && Array.isArray(data.segments)) return data.segments;
+    if (data && Array.isArray(data.data)) return data.data;
+
+    console.warn("Unexpected segments response format:", data);
+    return [];
   } catch (error) {
-    console.error("Failed to fetch segments:", error);
+    console.error("Failed to fetch segments:", error.message);
     return [];
   }
 };
 
+// Create a new segment
 export const createSegment = async (segmentData) => {
   try {
-    console.log("Creating segment with data:", segmentData);
     const data = await apiRequest("/segments", {
       method: "POST",
       body: JSON.stringify(segmentData),
     });
-    
-    // Handle different response formats
-    if (data && data.segment) {
-      return data.segment;
-    } else if (data && data.data) {
-      return data.data;
-    }
+
+    // Standardize return to always return segment object
+    if (data && data.segment) return data.segment;
+    if (data && data.data) return data.data;
+
     return data;
   } catch (error) {
-    console.error("Failed to create segment:", error);
+    console.error("Failed to create segment:", error.message);
     throw error;
   }
 };

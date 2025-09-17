@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import CustomerList from "../components/CustomerList";
 import SegmentModal from "../components/SegmentModal";
 import { fetchCustomers, createSegment } from "../services/api";
+import './PageStyles.css'; // Import shared styles
 
 const CustomerPage = () => {
   const [customers, setCustomers] = useState([]);
@@ -71,40 +72,135 @@ const CustomerPage = () => {
 
   const canCreateSegment = currentFilters && filteredCustomers.length > 0;
 
-  if (loading) return <p>Loading customers...</p>;
-  if (error) return <p>{error}</p>;
+  if (loading) {
+    return (
+      <div className="page-container">
+        <div className="loading-container">
+          <div className="loading-spinner"></div>
+          <p className="loading-text">Loading customers...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="page-container">
+        <div className="error-container">
+          <div className="error-icon">❌</div>
+          <h3 className="error-title">Oops! Something went wrong</h3>
+          <p className="error-message">{error}</p>
+          <button 
+            className="btn btn-primary"
+            onClick={loadCustomers}
+          >
+            Try Again
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // Calculate statistics
+  const totalCustomers = customers.length;
+  const activeCustomers = customers.filter(c => c.status === 'active' || !c.status).length;
+  const filteredCount = filteredCustomers.length;
+  const averageSpending = customers.length > 0 
+    ? (customers.reduce((sum, c) => sum + (c.totalSpent || 0), 0) / customers.length)
+    : 0;
 
   return (
-    <div>
-      <h2>Customer Management</h2>
-      
-      {/* Segment Creation Button */}
-      <div style={{ marginBottom: '20px' }}>
-        <button
-          onClick={() => setShowSegmentModal(true)}
-          disabled={!canCreateSegment}
-          style={{
-            padding: '10px 20px',
-            backgroundColor: canCreateSegment ? '#007bff' : '#ccc',
-            color: 'white',
-            border: 'none',
-            borderRadius: '4px',
-            cursor: canCreateSegment ? 'pointer' : 'not-allowed'
-          }}
-        >
-          Create Segment ({filteredCustomers.length} customers)
-        </button>
+    <div className="page-container">
+      {/* Header Section */}
+      <div className="page-header">
+        <div className="header-content">
+          <div className="header-icon">👥</div>
+          <div>
+            <h2 className="page-title">Customer Management</h2>
+            <p className="page-subtitle">
+              Manage customers and create targeted segments
+            </p>
+          </div>
+        </div>
+        
+        {/* Statistics Summary */}
+        <div className="stats-container">
+          <div className="stat-card">
+            <div className="stat-number">{totalCustomers}</div>
+            <div className="stat-label">Total Customers</div>
+          </div>
+          <div className="stat-card">
+            <div className="stat-number">{activeCustomers}</div>
+            <div className="stat-label">Active Customers</div>
+          </div>
+          <div className="stat-card">
+            <div className="stat-number">{filteredCount}</div>
+            <div className="stat-label">Filtered Results</div>
+          </div>
+          <div className="stat-card">
+            <div className="stat-number">
+              ₹{Math.round(averageSpending).toLocaleString()}
+            </div>
+            <div className="stat-label">Avg. Spending</div>
+          </div>
+        </div>
+      </div>
+
+      {/* Action Bar */}
+      <div className="content-card">
+        <div className="action-bar">
+          <div className="left-actions">
+            <h3 className="section-title">Customer Segments</h3>
+            {currentFilters && (
+              <span className="info-text success-text">
+                ✅ Filters applied
+              </span>
+            )}
+          </div>
+          <div className="right-actions">
+            <button
+              className={`btn ${canCreateSegment ? 'btn-primary' : 'btn-outline'}`}
+              onClick={() => setShowSegmentModal(true)}
+              disabled={!canCreateSegment}
+            >
+              ➕ Create Segment ({filteredCustomers.length} customers)
+            </button>
+            <button 
+              className="btn btn-secondary"
+              onClick={loadCustomers}
+              title="Refresh Customers"
+            >
+              🔄 Refresh
+            </button>
+          </div>
+        </div>
+        
         {!canCreateSegment && (
-          <p style={{ fontSize: '14px', color: '#666', margin: '5px 0' }}>
-            Apply filters to create a segment
-          </p>
+          <div className="info-text warning-text" style={{ textAlign: 'center', marginBottom: '20px' }}>
+            💡 Apply filters to create a customer segment
+          </div>
         )}
       </div>
 
-      <CustomerList 
-        customers={customers} 
-        onFiltersChange={handleFiltersChange}
-      />
+      {/* Customer List Section */}
+      <div className="content-card">
+        <div className="section-header">
+          <h3 className="section-title">All Customers</h3>
+          <div className="section-actions">
+            <button className="btn btn-outline">
+              📊 Export Data
+            </button>
+            <button className="btn btn-outline">
+              📈 Analytics
+            </button>
+          </div>
+        </div>
+        
+        <CustomerList 
+          customers={customers} 
+          onFiltersChange={handleFiltersChange}
+        />
+      </div>
 
       {/* Segment Creation Modal */}
       {showSegmentModal && (
