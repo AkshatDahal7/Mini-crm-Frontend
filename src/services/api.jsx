@@ -24,7 +24,7 @@ export const updateOrderStatus = async (orderId, status) => {
     throw error;
   }
 };
-const API_BASE = "http://localhost:4000/api";
+const API_BASE = "https://mini-crm-eg7w.onrender.com/api";
 
 // Helper to get token
 const getToken = () => {
